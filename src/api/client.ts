@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
 interface RequestConfig extends RequestInit {
   params?: Record<string, string>;
@@ -21,13 +22,16 @@ class ApiClient {
     return url.toString();
   }
 
-  private async request<T>(endpoint: string, config: RequestConfig = {}): Promise<T> {
+  private async request<T>(
+    endpoint: string,
+    config: RequestConfig = {}
+  ): Promise<T> {
     const { params, ...fetchConfig } = config;
     const url = this.buildURL(endpoint, params);
 
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      ...fetchConfig.headers,
+      ...(fetchConfig.headers as Record<string, string>),
     };
 
     const token = localStorage.getItem('token');
@@ -89,4 +93,3 @@ class ApiClient {
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
-
