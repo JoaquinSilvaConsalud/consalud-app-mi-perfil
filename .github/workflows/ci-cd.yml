@@ -1,0 +1,92 @@
+name: "CI/CD - Build y Deploy App Mi Perfil a GKE"
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+env:
+  PROJECT_ID: ${{ vars.PROJECT_ID }}
+  GCP_REGION: ${{ vars.GCP_REGION }}
+  GKE_CLUSTER: ${{ vars.GKE_CLUSTER }}
+  IMAGE_NAME: ${{ vars.IMAGE_NAME }}
+  ARTIFACT_REPO: ${{ vars.ARTIFACT_REPO }}
+  GCP_NPM_REPO_NAME: ${{ vars.GCP_NPM_REPO_NAME }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: development
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      #
+      # --- Autenticación de Dependencias ---
+      #
+      - name: 🔑 Get GCP AR Access Token (for NPM)
+        id: get_npm_token
+        run: echo "GCP_NPM_TOKEN=$(gcloud auth print-access-token)" >> $GITHUB_ENV
+
+      #
+      # --- Build y Push de Imagen Docker ---
+      #
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
+
+      - name: Generate image tag
+        id: generate_tag
+        run: echo "tag=${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.generate_tag.outputs.tag }}
+          # Pasa los argumentos al Dockerfile para la autenticación de NPM
+          build-args: |
+            GCP_NPM_TOKEN=${{ env.GCP_NPM_TOKEN }}
+            GCP_NPM_REPO_PATH=${{ env.GCP_REGION }}-npm.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GCP_NPM_REPO_NAME }}
+
+      #
+      # --- Deploy a GKE ---
+      #
+      - name: Get GKE credentials
+        run: gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} --region ${{ env.GCP_REGION }}
+
+      - name: 🔄 Deploy to GKE
+        run: |
+          echo "Updating GKE deployment with image: ${{ steps.generate_tag.outputs.tag }}"
+          
+          #
+          # ‼️ IMPORTANTE: Actualiza los siguientes valores ‼️
+          # Reemplaza 'deployment/consalud-app-mi-perfil' con el nombre de tu Deployment en GKE.
+          # Reemplaza 'app-container' con el nombre del *contenedor* dentro de tu Deployment.
+          #
+          kubectl set image deployment/consalud-app-mi-perfil app-container=${{ steps.generate_tag.outputs.tag }}
