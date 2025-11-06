@@ -60,9 +60,10 @@ jobs:
 
       - name: Generate image tag
         id: generate_tag
-        run: echo "tag=${{ env.GCP_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+        run: echo "tag=${{ env.GCP_LOCATION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
+        id: docker-push
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -74,12 +75,7 @@ jobs:
             GCP_NPM_REPO_PATH=${{ env.GCP_LOCATION }}-npm.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GCP_NPM_REPO_NAME }}
 
       - name: Get GKE credentials
-        id: get-credentials
-        uses: google-github-actions/get-gke-credentials@v1
-        with:
-          cluster_name: ${{ env.GKE_CLUSTER }}
-          location: ${{ env.GCP_LOCATION }}
-          project_id: ${{ env.PROJECT_ID }}
+        run: gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} --region ${{ env.GCP_LOCATION }}
 
       - name: 🚀 1. Apply k8s Manifests (Crea el Deployment y Servicio)
         run: |
@@ -89,4 +85,4 @@ jobs:
       - name: 🔄 Deploy to GKE
         run: |
           IMAGE_TAG="${{ steps.generate_tag.outputs.tag }}"
-          kubectl set image eployment/consalud-app-mi-perfil app-container=$IMAGE_TAG
+          kubectl set image deployment/consalud-app-mi-perfil app-container=$IMAGE_TAG
