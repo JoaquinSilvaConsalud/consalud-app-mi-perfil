@@ -1,8 +1,7 @@
 import React from 'react';
 import './Home.css';
 
-import { Card } from '../../../../consalud-ui/src/components/Card/Card';
-import { Button } from '../../../../consalud-ui/src/components/Button/Button';
+import { Card, Button } from '@consalud/consalud-ui';
 
 
 const Home: React.FC = () => {
