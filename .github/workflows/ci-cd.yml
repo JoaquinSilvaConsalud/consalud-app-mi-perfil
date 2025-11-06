@@ -44,17 +44,17 @@ jobs:
         with:
           workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      
+      - name: Set up Cloud SDK and GKE auth plugin
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          install_components: 'gke-gcloud-auth-plugin'
 
-      #
-      # --- Autenticación de Dependencias ---
-      #
       - name: 🔑 Get GCP AR Access Token (for NPM)
         id: get_npm_token
         run: echo "GCP_NPM_TOKEN=$(gcloud auth print-access-token)" >> $GITHUB_ENV
 
-      #
-      # --- Build y Push de Imagen Docker ---
-      #
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker ${{ env.GCP_LOCATION }}-docker.pkg.dev
 
@@ -69,14 +69,10 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ steps.generate_tag.outputs.tag }}
-          # Pasa los argumentos al Dockerfile para la autenticación de NPM
           build-args: |
             GCP_NPM_TOKEN=${{ env.GCP_NPM_TOKEN }}
             GCP_NPM_REPO_PATH=${{ env.GCP_LOCATION }}-npm.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GCP_NPM_REPO_NAME }}
 
-      #
-      # --- Deploy a GKE ---
-      #
       - name: Get GKE credentials
         run: gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} --region ${{ env.GCP_LOCATION }}
 
