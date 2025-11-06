@@ -74,15 +74,19 @@ jobs:
             GCP_NPM_REPO_PATH=${{ env.GCP_LOCATION }}-npm.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GCP_NPM_REPO_NAME }}
 
       - name: Get GKE credentials
-        run: gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} --region ${{ env.GCP_LOCATION }}
+        id: get-credentials
+        uses: google-github-actions/get-gke-credentials@v1
+        with:
+          cluster_name: ${{ env.GKE_CLUSTER }}
+          location: ${{ env.GCP_LOCATION }}
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: 🚀 1. Apply k8s Manifests (Crea el Deployment y Servicio)
+        run: |
+          kubectl apply -f k8s/deployment.yml
+          kubectl apply -f k8s/service.yml
 
       - name: 🔄 Deploy to GKE
         run: |
-          echo "Updating GKE deployment with image: ${{ steps.generate_tag.outputs.tag }}"
-          
-          #
-          # ‼️ IMPORTANTE: Actualiza los siguientes valores ‼️
-          # Reemplaza 'deployment/consalud-app-mi-perfil' con el nombre de tu Deployment en GKE.
-          # Reemplaza 'app-container' con el nombre del *contenedor* dentro de tu Deployment.
-          #
-          kubectl set image deployment/consalud-app-mi-perfil app-container=${{ steps.generate_tag.outputs.tag }}
+          IMAGE_TAG="${{ steps.generate_tag.outputs.tag }}"
+          kubectl set image eployment/consalud-app-mi-perfil app-container=$IMAGE_TAG

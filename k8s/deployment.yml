@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consalud-app-mi-perfil
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: consalud-app-mi-perfil
+  template:
+    metadata:
+      labels:
+        app: consalud-app-mi-perfil
+    spec:
+      containers:
+      - name: app-container
+        image: southamerica-west1-docker.pkg.dev/ethereal-brace-475715-d0/new-core-repo/consalud-app-mi-perfil:latest
+        ports:
+        - containerPort: 80
