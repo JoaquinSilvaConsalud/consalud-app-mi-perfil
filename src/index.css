@@ -1,12 +1,5 @@
 @import url('@consalud/consalud-ui/dist/index.css');
 
-/* Minimal normalize/reset */
-html,
-body,
-#root {
-  height: 100%;
-}
-
 * {
   box-sizing: border-box;
 }
@@ -21,7 +14,13 @@ body {
   font-size: var(--consalud-font-size-base);
   line-height: var(--consalud-line-height-normal);
   color: var(--consalud-black);
-  background: var(--consalud-white);
+  background-color: var(--consalud-gray-100);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: start;
+  min-height: 100vh;
+  padding-bottom: var(--consalud-spacing-3xl);
 }
 
 h1,
