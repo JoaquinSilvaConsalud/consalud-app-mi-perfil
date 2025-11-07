@@ -2,7 +2,7 @@ FROM node:18-alpine AS build
 
 WORKDIR /app
 
-# Argumentos que se pasarán desde el comando `docker build` (en el CI)
+
 ARG GCP_NPM_TOKEN
 ARG GCP_NPM_REPO_PATH
 
@@ -21,7 +21,7 @@ RUN rm .npmrc
 
 RUN npm run build
 
-FROM nginx:1.25-alpine
+FROM nginx:1.25-alpin
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
