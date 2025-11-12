@@ -55,3 +55,4 @@ storybook-static
 # src/pages/*/
 # src/hooks/use*
 # src/utils/*.ts.npmrc
+.npmrc
