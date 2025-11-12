@@ -1,4 +1,4 @@
-FROM node:18-slim AS build
+FROM node:18-alpine AS build
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN echo "always-auth=true" >> .npmrc
 
 COPY package.json package-lock.json* ./
 
-RUN npm ci
+RUN npm install
 
 COPY . .
 
